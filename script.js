@@ -14,7 +14,7 @@ const TILESIZE = 50;
 const SHAPES = new Set(["O", "I", "J", "L", "S", "Z", "T"]); 
 
 let frameStep = 0; 
-let updateMod = 20; 
+let updateMod = 5; 
 let occupiedGrids = new Set(); 
 let allTetros = [];
 
@@ -150,9 +150,9 @@ class TetrominoI extends Tetromino {
 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
-            new SquareTile((x + 1) * TILESIZE, y * TILESIZE, color),
-            new SquareTile((x + 2) * TILESIZE, y * TILESIZE, color), 
-            new SquareTile((x + 3) * TILESIZE, y * TILESIZE, color)
+            new SquareTile(x * TILESIZE, (y + 1) * TILESIZE, color),
+            new SquareTile(x * TILESIZE, (y + 2) * TILESIZE, color), 
+            new SquareTile(x * TILESIZE, (y + 3) * TILESIZE, color)
         ); 
     }
 
@@ -168,10 +168,10 @@ class TetrominoL extends Tetromino {
         super(); 
 
         this.tiles.push(
-            new SquareTile(x * TILESIZE, y * TILESIZE, color),
             new SquareTile((x + 1) * TILESIZE, y * TILESIZE, color),
-            new SquareTile((x + 2) * TILESIZE, y * TILESIZE, color), 
-            new SquareTile((x + 2) * TILESIZE, (y - 1) * TILESIZE, color)
+            new SquareTile((x + 1) * TILESIZE, (y + 1) * TILESIZE, color),
+            new SquareTile((x + 1) * TILESIZE, (y + 2) * TILESIZE, color), 
+            new SquareTile(x * TILESIZE, (y + 2) * TILESIZE, color)
         ); 
     }
 
@@ -188,9 +188,9 @@ class TetrominoJ extends Tetromino {
 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
-            new SquareTile((x + 1) * TILESIZE, y * TILESIZE, color),
-            new SquareTile((x + 2) * TILESIZE, y * TILESIZE, color), 
-            new SquareTile((x + 2) * TILESIZE, (y + 1) * TILESIZE, color)
+            new SquareTile(x * TILESIZE, (y + 1) * TILESIZE, color),
+            new SquareTile(x * TILESIZE, (y + 2) * TILESIZE, color), 
+            new SquareTile((x + 1) * TILESIZE, (y + 2) * TILESIZE, color)
         ); 
     }
 
@@ -207,9 +207,9 @@ class TetrominoZ extends Tetromino {
 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
-            new SquareTile((x + 1) * TILESIZE, y * TILESIZE, color),
-            new SquareTile(x * TILESIZE, (y - 1) * TILESIZE, color), 
-            new SquareTile((x - 1) * TILESIZE, (y - 1) * TILESIZE, color)
+            new SquareTile(x * TILESIZE, (y + 1) * TILESIZE, color),
+            new SquareTile((x + 1) * TILESIZE, y * TILESIZE, color), 
+            new SquareTile((x + 1) * TILESIZE, (y - 1) * TILESIZE, color)
         ); 
     }
 
@@ -225,10 +225,10 @@ class TetrominoS extends Tetromino {
         super(); 
 
         this.tiles.push(
-            new SquareTile(x * TILESIZE, y * TILESIZE, color),
-            new SquareTile((x - 1) * TILESIZE, y * TILESIZE, color),
-            new SquareTile(x * TILESIZE, (y - 1) * TILESIZE, color), 
-            new SquareTile((x + 1) * TILESIZE, (y - 1) * TILESIZE, color)
+            new SquareTile((x + 1) * TILESIZE, y * TILESIZE, color),
+            new SquareTile((x + 1) * TILESIZE, (y + 1) * TILESIZE, color),
+            new SquareTile(x * TILESIZE, y * TILESIZE, color), 
+            new SquareTile(x * TILESIZE, (y - 1) * TILESIZE, color)
         ); 
     }
 
@@ -245,9 +245,9 @@ class TetrominoT extends Tetromino {
 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
-            new SquareTile((x - 1) * TILESIZE, y * TILESIZE, color),
-            new SquareTile((x +  1) * TILESIZE, y * TILESIZE, color), 
-            new SquareTile(x * TILESIZE, (y - 1) * TILESIZE, color)
+            new SquareTile(x * TILESIZE, (y - 1) * TILESIZE, color),
+            new SquareTile(x * TILESIZE, (y + 1) * TILESIZE, color), 
+            new SquareTile((x + 1) * TILESIZE, y * TILESIZE, color)
         ); 
     }
 
@@ -295,7 +295,7 @@ function addRandomTetronimo() {
     let rIdx = Math.floor(Math.random() * possibleShapes.length); 
     let pickedShape = possibleShapes[rIdx]; 
 
-    let max = 10; let min = 1; 
+    let max = 9; let min = 1; 
     let dropX = Math.floor(Math.random() * (max - min + 1)) + min;
     let dropY = -3; 
     let newTetro;
@@ -305,7 +305,6 @@ function addRandomTetronimo() {
     
     switch (pickedShape) {
         case "O": 
-            if (dropX == 10) dropX = 9; 
             newTetro = new TetrominoO(dropX, dropY, YELLOW); 
             break; 
 

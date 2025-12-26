@@ -12,7 +12,7 @@ const ORANGE = "#FF971C";
 const TILESIZE = 50;
 
 // const SHAPES = new Set(["O", "I", "J", "L", "S", "Z", "T"]); 
-const SHAPES = new Set(["I"]); 
+const SHAPES = new Set(["I", "Z", "S"]); 
 
 let frameStep = 0; 
 let updateMod = 20; 
@@ -304,7 +304,7 @@ class TetrominoJ extends Tetromino {
 class TetrominoZ extends Tetromino {
     constructor(x, y, color) {
         super(); 
-
+        this.state = 0; 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
             new SquareTile(x * TILESIZE, (y + 1) * TILESIZE, color),
@@ -317,6 +317,59 @@ class TetrominoZ extends Tetromino {
         for (let i = 0; i < this.tiles.length; i++) {
             this.tiles[i].make();
           }
+    }
+
+    rotate(rot) {
+        if (this.state === 0) {
+            this.toState1(); 
+
+        } else {
+            this.toState0(); 
+
+        }
+    }
+
+    // Z and S are fairly interesting in that there are actually two tiles
+    // that never move under rotations!  
+
+    toState0() {
+        let sTile1 = this.tiles[1];
+        let sTile2 = this.tiles[3];
+
+        const s1x = sTile1.x / TILESIZE;
+        const s1y = sTile1.y / TILESIZE;
+        const s2x = sTile2.x / TILESIZE;
+        const s2y = sTile2.y / TILESIZE;
+
+        if (occupiedGrids.has(`${s1x - 2},${s1y}`)) return;
+        if (occupiedGrids.has(`${s2x},${s2y - 2}`)) return;
+
+        this.state = 0; 
+        occupiedGrids.delete(`${s1x},${s1y}`);
+        occupiedGrids.delete(`${s2x},${s2y}`); 
+
+        this.tiles[1] = new SquareTile((s1x - 2) * TILESIZE, (s1y) * TILESIZE, sTile1.color);
+        this.tiles[3] = new SquareTile((s2x) * TILESIZE, (s2y - 2) * TILESIZE, sTile2.color);
+    }
+
+    toState1() {
+        let sTile1 = this.tiles[1];
+        let sTile2 = this.tiles[3];
+
+        const s1x = sTile1.x / TILESIZE;
+        const s1y = sTile1.y / TILESIZE;
+        const s2x = sTile2.x / TILESIZE;
+        const s2y = sTile2.y / TILESIZE;
+
+        if (occupiedGrids.has(`${s1x + 2},${s1y}`)) return;
+        if (occupiedGrids.has(`${s2x},${s2y + 2}`)) return;
+
+        this.state = 1; 
+        occupiedGrids.delete(`${s1x},${s1y}`);
+        occupiedGrids.delete(`${s2x},${s2y}`); 
+
+        this.tiles[1] = new SquareTile((s1x + 2) * TILESIZE, (s1y) * TILESIZE, sTile1.color);
+        this.tiles[3] = new SquareTile((s2x) * TILESIZE, (s2y + 2) * TILESIZE, sTile2.color);
     }
 }
 
@@ -336,6 +389,56 @@ class TetrominoS extends Tetromino {
         for (let i = 0; i < this.tiles.length; i++) {
             this.tiles[i].make();
           }
+    }
+
+    rotate(rot) {
+        if (this.state === 0) {
+            this.toState1(); 
+
+        } else {
+            this.toState0(); 
+
+        }
+    }
+
+    toState0() {
+        let sTile1 = this.tiles[1];
+        let sTile2 = this.tiles[3];
+
+        const s1x = sTile1.x / TILESIZE;
+        const s1y = sTile1.y / TILESIZE;
+        const s2x = sTile2.x / TILESIZE;
+        const s2y = sTile2.y / TILESIZE;
+
+        if (occupiedGrids.has(`${s1x - 2},${s1y}`)) return;
+        if (occupiedGrids.has(`${s2x},${s2y + 2}`)) return;
+
+        this.state = 0; 
+        occupiedGrids.delete(`${s1x},${s1y}`);
+        occupiedGrids.delete(`${s2x},${s2y}`); 
+
+        this.tiles[1] = new SquareTile((s1x - 2) * TILESIZE, (s1y) * TILESIZE, sTile1.color);
+        this.tiles[3] = new SquareTile((s2x) * TILESIZE, (s2y + 2) * TILESIZE, sTile2.color);
+    }
+
+    toState1() {
+        let sTile1 = this.tiles[1];
+        let sTile2 = this.tiles[3];
+
+        const s1x = sTile1.x / TILESIZE;
+        const s1y = sTile1.y / TILESIZE;
+        const s2x = sTile2.x / TILESIZE;
+        const s2y = sTile2.y / TILESIZE;
+
+        if (occupiedGrids.has(`${s1x + 2},${s1y}`)) return;
+        if (occupiedGrids.has(`${s2x},${s2y - 2}`)) return;
+
+        this.state = 1; 
+        occupiedGrids.delete(`${s1x},${s1y}`);
+        occupiedGrids.delete(`${s2x},${s2y}`); 
+
+        this.tiles[1] = new SquareTile((s1x + 2) * TILESIZE, (s1y) * TILESIZE, sTile1.color);
+        this.tiles[3] = new SquareTile((s2x) * TILESIZE, (s2y - 2) * TILESIZE, sTile2.color);
     }
 }
 
@@ -377,7 +480,7 @@ function makeFrame() {
         new SquareTile(x * TILESIZE, (rows - 1) * TILESIZE, GRAY).make();
     }
 
-    for (let y = 0; y < rows - 1; y++) {
+    for (let y = -10; y < rows - 1; y++) {
         new SquareTile(0, y * TILESIZE, GRAY).make();
         new SquareTile((cols - 1) * TILESIZE, y * TILESIZE, GRAY).make();
     }
@@ -388,7 +491,7 @@ function makeFrame() {
 let shapesUsedInCycle = new Set(); 
 
 function addRandomTetronimo() {
-    console.log(shapesUsedInCycle); 
+    // console.log(shapesUsedInCycle); 
 
     if (shapesUsedInCycle.size == SHAPES.size) shapesUsedInCycle = new Set(); 
     let possibleShapes = Array.from(SHAPES.difference(shapesUsedInCycle)); 

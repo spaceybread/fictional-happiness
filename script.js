@@ -11,9 +11,13 @@ const CYAN = "#00FFFF";
 const ORANGE = "#FF971C"; 
 const TILESIZE = 50;
 
+const SHAPES = new Set(["O", "I", "J", "L", "S", "Z", "T"]); 
+
 let frameStep = 0; 
 let updateMod = 20; 
 let occupiedGrids = new Set(); 
+let allTetros = [];
+
 
 const canvas = /** @type {HTMLCanvasElement} */ (
     document.getElementById("box1canvas")
@@ -73,7 +77,7 @@ class Tetromino {
     step() {
         if (!this.isActive) return; 
         if (frameStep % updateMod !== 0) return; 
-        console.log(occupiedGrids); 
+        // console.log(occupiedGrids); 
         // needs to fall here
         let shouldStep = true; 
 
@@ -108,6 +112,15 @@ class Tetromino {
             this.tiles[i] = newTile; 
         }
 
+        // remove the old locations from the set
+        thisPiecesGrid = new Set(); 
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+            thisPiecesGrid.add(`${oldTile.x / TILESIZE},${oldTile.y / TILESIZE}`);
+        }
+
+        occupiedGrids = otherPiecesGrid.union(thisPiecesGrid);
 
     }
 }
@@ -271,22 +284,100 @@ function makeFrame() {
 
 }
 
-let testTile = new TetrominoO(2, 1, PURPLE); 
+
+let shapesUsedInCycle = new Set(); 
+
+function addRandomTetronimo() {
+    console.log(shapesUsedInCycle); 
+
+    if (shapesUsedInCycle.size == SHAPES.size) shapesUsedInCycle = new Set(); 
+    let possibleShapes = Array.from(SHAPES.difference(shapesUsedInCycle)); 
+    let rIdx = Math.floor(Math.random() * possibleShapes.length); 
+    let pickedShape = possibleShapes[rIdx]; 
+
+    let max = 10; let min = 1; 
+    let dropX = Math.floor(Math.random() * (max - min + 1)) + min;
+    let dropY = -3; 
+    let newTetro;
+
+    // need to add a bunch of bounds checks so that tetros dont get stuck on
+    // the boundary box
+    
+    switch (pickedShape) {
+        case "O": 
+            if (dropX == 10) dropX = 9; 
+            newTetro = new TetrominoO(dropX, dropY, YELLOW); 
+            break; 
+
+        case "I":
+            newTetro = new TetrominoI(dropX, dropY, CYAN); 
+            break; 
+        
+        case "J": 
+            newTetro = new TetrominoJ(dropX, dropY, BLUE); 
+            break; 
+
+        case "L":
+            newTetro = new TetrominoL(dropX, dropY, ORANGE); 
+            break;
+            
+        case "S": 
+            newTetro = new TetrominoS(dropX, dropY, GREEN); 
+            break; 
+
+        case "Z":
+            newTetro = new TetrominoZ(dropX, dropY, RED); 
+            break;
+
+        case "T":
+            newTetro = new TetrominoT(dropX, dropY, PURPLE); 
+            break;
+    }
+    allTetros.push(newTetro); 
+    shapesUsedInCycle.add(pickedShape);
+}
+
+function makeAndUpdateTetros() {
+    if (allTetros.length == 0) addRandomTetronimo(); 
+
+    let tetroInPlay = false; 
+
+    for (let i = 0; i < allTetros.length; i++) {
+        allTetros[i].make(); 
+        allTetros[i].step(); 
+        
+        tetroInPlay = tetroInPlay || allTetros[i].isActive; 
+    }
+
+    // add logic to delete lines
+
+    if (!tetroInPlay) addRandomTetronimo(); 
+
+}
+
+let testTile2 = new TetrominoO(2, -6, PURPLE); 
+
+let testTile = new TetrominoO(1, 1, PURPLE); 
  
 
 function animate() {
     frameStep += 1; 
     context.clearRect(0, 0, canvas.width, canvas.height);
     makeFrame(); 
-    testTile.make();
-    testTile.step(); 
+    // testTile.make();
+    // testTile.step();
+    
+    // testTile2.make();
+    // testTile2.step();
 
-    new TetrominoI(5, 1, RED).make(); 
-    new TetrominoJ(6, 4, BLUE).make();
-    new TetrominoL(1, 5, CYAN).make(); 
-    new TetrominoZ(3, 8, YELLOW).make(); 
-    new TetrominoS(7, 8, GREEN).make(); 
-    new TetrominoT(5, 11, ORANGE).make(); 
+    // new TetrominoI(5, 1, RED).make(); 
+    // new TetrominoJ(6, 4, BLUE).make();
+    // // new TetrominoL(1, 5, CYAN).make(); 
+    // new TetrominoZ(3, 8, YELLOW).make(); 
+    // new TetrominoS(7, 8, GREEN).make(); 
+    // new TetrominoT(5, 11, ORANGE).make(); 
+
+    makeAndUpdateTetros(); 
     
 
     requestAnimationFrame(animate);

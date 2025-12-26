@@ -11,6 +11,10 @@ const CYAN = "#00FFFF";
 const ORANGE = "#FF971C"; 
 const TILESIZE = 50;
 
+let frameStep = 0; 
+let updateMod = 20; 
+let occupiedGrids = new Set(); 
+
 const canvas = /** @type {HTMLCanvasElement} */ (
     document.getElementById("box1canvas")
 );
@@ -55,14 +59,63 @@ class SquareTile {
         context.fillStyle = light;
         context.fillRect(this.x, this.y, this.size, this.band);
         context.fillRect(this.x, this.y, this.band, this.size);
+
+        occupiedGrids.add(`${this.x / TILESIZE},${this.y / TILESIZE}`);
     }
 }
 
-class TetrominoO {
-    constructor(x, y, color) {
-        this.tiles = []; 
-        this.isActive = false;
+class Tetromino {
+    constructor() {
+        this.isActive = true;
+        this.tiles = [];
+    }
+    
+    step() {
+        if (!this.isActive) return; 
+        if (frameStep % updateMod !== 0) return; 
+        console.log(occupiedGrids); 
+        // needs to fall here
+        let shouldStep = true; 
 
+        let thisPiecesGrid = new Set(); 
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+            thisPiecesGrid.add(`${oldTile.x / TILESIZE},${oldTile.y / TILESIZE}`);
+        }
+
+        let otherPiecesGrid = occupiedGrids.difference(thisPiecesGrid); 
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+
+            const gridX = oldTile.x / TILESIZE;
+            const gridY = oldTile.y / TILESIZE + 1;
+            
+            if (otherPiecesGrid.has(`${gridX},${gridY}`)) {
+                shouldStep = false;
+            }
+        }
+
+        if (!shouldStep) {
+            this.isActive = false;
+            return; 
+        }
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+            let newTile = new SquareTile(oldTile.x, oldTile.y + TILESIZE, oldTile.color); 
+            this.tiles[i] = newTile; 
+        }
+
+
+    }
+}
+
+class TetrominoO extends Tetromino {
+    constructor(x, y, color) {
+        super(); 
+         
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
             new SquareTile((x + 1) * TILESIZE, (y + 1) * TILESIZE, color),
@@ -78,10 +131,9 @@ class TetrominoO {
     }
 }
 
-class TetrominoI {
+class TetrominoI extends Tetromino {
     constructor(x, y, color) {
-        this.tiles = []; 
-        this.isActive = false;
+        super(); 
 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
@@ -98,10 +150,9 @@ class TetrominoI {
     }
 }
 
-class TetrominoL {
+class TetrominoL extends Tetromino {
     constructor(x, y, color) {
-        this.tiles = []; 
-        this.isActive = false;
+        super(); 
 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
@@ -118,10 +169,9 @@ class TetrominoL {
     }
 }
 
-class TetrominoJ {
+class TetrominoJ extends Tetromino {
     constructor(x, y, color) {
-        this.tiles = []; 
-        this.isActive = false;
+        super(); 
 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
@@ -138,10 +188,9 @@ class TetrominoJ {
     }
 }
 
-class TetrominoZ {
+class TetrominoZ extends Tetromino {
     constructor(x, y, color) {
-        this.tiles = []; 
-        this.isActive = false;
+        super(); 
 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
@@ -158,10 +207,9 @@ class TetrominoZ {
     }
 }
 
-class TetrominoS {
+class TetrominoS extends Tetromino {
     constructor(x, y, color) {
-        this.tiles = []; 
-        this.isActive = false;
+        super(); 
 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
@@ -178,10 +226,9 @@ class TetrominoS {
     }
 }
 
-class TetrominoT {
+class TetrominoT extends Tetromino {
     constructor(x, y, color) {
-        this.tiles = []; 
-        this.isActive = false;
+        super(); 
 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
@@ -224,16 +271,19 @@ function makeFrame() {
 
 }
 
-
+let testTile = new TetrominoO(2, 1, PURPLE); 
+ 
 
 function animate() {
+    frameStep += 1; 
     context.clearRect(0, 0, canvas.width, canvas.height);
     makeFrame(); 
+    testTile.make();
+    testTile.step(); 
 
-    new TetrominoO(2, 1, PURPLE).make(); 
     new TetrominoI(5, 1, RED).make(); 
     new TetrominoJ(6, 4, BLUE).make();
-    new TetrominoL(2, 5, CYAN).make(); 
+    new TetrominoL(1, 5, CYAN).make(); 
     new TetrominoZ(3, 8, YELLOW).make(); 
     new TetrominoS(7, 8, GREEN).make(); 
     new TetrominoT(5, 11, ORANGE).make(); 

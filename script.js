@@ -11,7 +11,8 @@ const CYAN = "#00FFFF";
 const ORANGE = "#FF971C"; 
 const TILESIZE = 50;
 
-const SHAPES = new Set(["O", "I", "J", "L", "S", "Z", "T"]); 
+// const SHAPES = new Set(["O", "I", "J", "L", "S", "Z", "T"]); 
+const SHAPES = new Set(["I"]); 
 
 let frameStep = 0; 
 let updateMod = 20; 
@@ -166,6 +167,11 @@ class Tetromino {
         occupiedGrids = otherPiecesGrid.union(thisPiecesGrid);
         
     }
+
+    rotate(rot) {
+        console.log(`Rotate is not implemented for this tetronimo: ${rot}`); 
+        return; 
+    }
 }
 
 class TetrominoO extends Tetromino {
@@ -190,7 +196,7 @@ class TetrominoO extends Tetromino {
 class TetrominoI extends Tetromino {
     constructor(x, y, color) {
         super(); 
-
+        this.state = 1; 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
             new SquareTile(x * TILESIZE, (y + 1) * TILESIZE, color),
@@ -203,6 +209,57 @@ class TetrominoI extends Tetromino {
         for (let i = 0; i < this.tiles.length; i++) {
             this.tiles[i].make();
           }
+    }
+
+    rotate(rot) {
+        if (this.state === 0) {
+            this.toState1(); 
+
+        } else {
+            this.toState0(); 
+
+        }
+    }
+
+    toState0() {
+        // the pivot tile is one we can guarantee exists as clean spot
+        let pivotTile = this.tiles[1];
+
+        const pivotX = pivotTile.x / TILESIZE;
+        const pivotY = pivotTile.y / TILESIZE;
+        
+        if (occupiedGrids.has(`${pivotX - 1},${pivotY}`)) return;
+        if (occupiedGrids.has(`${pivotX + 1},${pivotY}`)) return;
+        if (occupiedGrids.has(`${pivotX + 2},${pivotY}`)) return;
+            
+        this.state = 0; 
+        occupiedGrids.delete(`${pivotX},${pivotY + 2}`);
+        occupiedGrids.delete(`${pivotX},${pivotY - 1}`); 
+        occupiedGrids.delete(`${pivotX},${pivotY + 1}`);
+
+        this.tiles[0] = new SquareTile((pivotX - 1) * TILESIZE, pivotY * TILESIZE, pivotTile.color);
+        this.tiles[2] = new SquareTile((pivotX + 1) * TILESIZE, pivotY * TILESIZE, pivotTile.color);
+        this.tiles[3] = new SquareTile((pivotX + 2) * TILESIZE, pivotY * TILESIZE, pivotTile.color);
+    }
+
+    toState1() {
+        let pivotTile = this.tiles[1];
+
+        const pivotX = pivotTile.x / TILESIZE;
+        const pivotY = pivotTile.y / TILESIZE;
+        
+        if (occupiedGrids.has(`${pivotX},${pivotY + 2}`)) return;
+        if (occupiedGrids.has(`${pivotX},${pivotY - 1}`)) return;
+        if (occupiedGrids.has(`${pivotX},${pivotY + 1}`)) return;
+            
+        this.state = 1; 
+        occupiedGrids.delete(`${pivotX - 1},${pivotY}`);
+        occupiedGrids.delete(`${pivotX + 1},${pivotY}`); 
+        occupiedGrids.delete(`${pivotX + 2},${pivotY}`);
+
+        this.tiles[0] = new SquareTile((pivotX) * TILESIZE, (pivotY - 1) * TILESIZE, pivotTile.color);
+        this.tiles[2] = new SquareTile((pivotX) * TILESIZE, (pivotY + 1) * TILESIZE, pivotTile.color);
+        this.tiles[3] = new SquareTile((pivotX) * TILESIZE, (pivotY + 2) * TILESIZE, pivotTile.color);
     }
 }
 
@@ -413,6 +470,28 @@ window.addEventListener("keydown", e => {
         for (const tetro of allTetros) {
             if (tetro.isActive) {
                 tetro.shift(-1);
+                break;
+            }
+        }
+    }
+});
+
+window.addEventListener("keydown", e => {
+    if (e.key === "d") {
+        for (const tetro of allTetros) {
+            if (tetro.isActive) {
+                tetro.rotate(-1);
+                break;
+            }
+        }
+    }
+});
+
+window.addEventListener("keydown", e => {
+    if (e.key === "a") {
+        for (const tetro of allTetros) {
+            if (tetro.isActive) {
+                tetro.rotate(1);
                 break;
             }
         }

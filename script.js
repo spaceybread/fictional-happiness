@@ -14,8 +14,9 @@ const TILESIZE = 50;
 const SHAPES = new Set(["O", "I", "J", "L", "S", "Z", "T"]); 
 
 let frameStep = 0; 
-let updateMod = 5; 
+let updateMod = 20; 
 let occupiedGrids = new Set(); 
+let gridMap = new Map(); 
 let allTetros = [];
 
 
@@ -64,7 +65,10 @@ class SquareTile {
         context.fillRect(this.x, this.y, this.size, this.band);
         context.fillRect(this.x, this.y, this.band, this.size);
 
-        occupiedGrids.add(`${this.x / TILESIZE},${this.y / TILESIZE}`);
+        let id = `${this.x / TILESIZE},${this.y / TILESIZE}`;
+        occupiedGrids.add(id);
+        gridMap.set(id, this)
+
     }
 }
 
@@ -105,7 +109,7 @@ class Tetromino {
             this.isActive = false;
             return; 
         }
-
+        
         for (let i = 0; i < this.tiles.length; i++) {
             let oldTile = this.tiles[i]; 
             let newTile = new SquareTile(oldTile.x, oldTile.y + TILESIZE, oldTile.color); 
@@ -122,6 +126,45 @@ class Tetromino {
 
         occupiedGrids = otherPiecesGrid.union(thisPiecesGrid);
 
+    }
+
+    shift(shft) {
+        let thisPiecesGrid = new Set(); 
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+            thisPiecesGrid.add(`${oldTile.x / TILESIZE},${oldTile.y / TILESIZE}`);
+        }
+
+        let otherPiecesGrid = occupiedGrids.difference(thisPiecesGrid); 
+        let shouldShift = true; 
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+
+            const gridX = oldTile.x / TILESIZE + shft;
+            const gridY = oldTile.y / TILESIZE;
+            
+            if (otherPiecesGrid.has(`${gridX},${gridY}`) || gridX == 11 || gridX == 0) {
+                shouldShift = false;
+            }
+        }
+
+        if (!shouldShift) return; 
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+            let newTile = new SquareTile(oldTile.x + TILESIZE * shft, oldTile.y, oldTile.color); 
+            this.tiles[i] = newTile; 
+        }
+        thisPiecesGrid = new Set(); 
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+            thisPiecesGrid.add(`${oldTile.x / TILESIZE},${oldTile.y / TILESIZE}`);
+        }
+
+        occupiedGrids = otherPiecesGrid.union(thisPiecesGrid);
+        
     }
 }
 
@@ -297,7 +340,7 @@ function addRandomTetronimo() {
 
     let max = 9; let min = 1; 
     let dropX = Math.floor(Math.random() * (max - min + 1)) + min;
-    let dropY = -3; 
+    let dropY = -5; 
     let newTetro;
 
     // need to add a bunch of bounds checks so that tetros dont get stuck on
@@ -343,7 +386,7 @@ function makeAndUpdateTetros() {
 
     for (let i = 0; i < allTetros.length; i++) {
         allTetros[i].make(); 
-        allTetros[i].step(); 
+        allTetros[i].step();
         
         tetroInPlay = tetroInPlay || allTetros[i].isActive; 
     }
@@ -354,10 +397,27 @@ function makeAndUpdateTetros() {
 
 }
 
-let testTile2 = new TetrominoO(2, -6, PURPLE); 
+window.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") {
+        for (const tetro of allTetros) {
+            if (tetro.isActive) {
+                tetro.shift(1);
+                break;
+            }
+        }
+    }
+});
 
-let testTile = new TetrominoO(1, 1, PURPLE); 
- 
+window.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") {
+        for (const tetro of allTetros) {
+            if (tetro.isActive) {
+                tetro.shift(-1);
+                break;
+            }
+        }
+    }
+});
 
 function animate() {
     frameStep += 1; 

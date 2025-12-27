@@ -11,8 +11,7 @@ const CYAN = "#00FFFF";
 const ORANGE = "#FF971C"; 
 const TILESIZE = 50;
 
-// const SHAPES = new Set(["O", "I", "J", "L", "S", "Z", "T"]); 
-const SHAPES = new Set(["T"]); 
+const SHAPES = new Set(["O", "I", "J", "L", "S", "Z", "T"]); 
 
 let frameStep = 0; 
 let updateMod = 20; 
@@ -266,7 +265,7 @@ class TetrominoI extends Tetromino {
 class TetrominoL extends Tetromino {
     constructor(x, y, color) {
         super(); 
-
+        this.state = 0; 
         this.tiles.push(
             new SquareTile((x + 1) * TILESIZE, y * TILESIZE, color),
             new SquareTile((x + 1) * TILESIZE, (y + 1) * TILESIZE, color),
@@ -280,12 +279,99 @@ class TetrominoL extends Tetromino {
             this.tiles[i].make();
           }
     }
+
+    rotate(rot) {
+        let nextState = this.state + rot; 
+        let pivotTile = this.tiles[1]; 
+
+        occupiedGrids.delete(`${this.tiles[3].x / TILESIZE},${this.tiles[3].y / TILESIZE}`); 
+        if (nextState % 2 == 0) {
+            this.toVertical(); 
+
+            if (nextState % 4 == 0) {
+                this.tiles[3] = new SquareTile((pivotTile.x - TILESIZE), (pivotTile.y + TILESIZE), pivotTile.color); 
+            } else {
+                this.tiles[3] = new SquareTile((pivotTile.x + TILESIZE), (pivotTile.y - TILESIZE), pivotTile.color); 
+            }
+
+        } else {
+            this.toHorizontal();
+            
+            if (nextState % 4 == 1) {
+                
+                this.tiles[3] = new SquareTile((pivotTile.x - TILESIZE), (pivotTile.y - TILESIZE), pivotTile.color); 
+            } else {
+                this.tiles[3] = new SquareTile((pivotTile.x + TILESIZE), (pivotTile.y + TILESIZE), pivotTile.color); 
+            }
+        }
+        this.state = nextState; 
+    }
+
+    toVertical() {
+        let leftToTop = this.tiles[0];
+        let rightToBot = this.tiles[2];
+
+        let thisPiecesGrid = new Set(); 
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+            thisPiecesGrid.add(`${oldTile.x / TILESIZE},${oldTile.y / TILESIZE}`);
+        }
+
+        let otherPiecesGrid = occupiedGrids.difference(thisPiecesGrid); 
+        
+        const s1x = leftToTop.x / TILESIZE;
+        const s1y = leftToTop.y / TILESIZE;
+        const s2x = rightToBot.x / TILESIZE;
+        const s2y = rightToBot.y / TILESIZE;
+
+        
+
+        if (otherPiecesGrid.has(`${s1x + 1},${s1y - 1}`)) return;
+        if (otherPiecesGrid.has(`${s2x - 1},${s2y + 1}`)) return;
+
+        occupiedGrids.delete(`${s1x},${s1y}`);
+        occupiedGrids.delete(`${s2x},${s2y}`); 
+
+        this.tiles[0] = new SquareTile((s1x + 1) * TILESIZE, (s1y - 1) * TILESIZE, leftToTop.color);
+        this.tiles[2] = new SquareTile((s2x - 1) * TILESIZE, (s2y + 1) * TILESIZE, rightToBot.color);
+    }
+
+    toHorizontal() {
+        let topToLeft = this.tiles[0];
+        let botToRight = this.tiles[2];
+
+        let thisPiecesGrid = new Set(); 
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+            thisPiecesGrid.add(`${oldTile.x / TILESIZE},${oldTile.y / TILESIZE}`);
+        }
+
+        let otherPiecesGrid = occupiedGrids.difference(thisPiecesGrid); 
+        
+        const s1x = topToLeft.x / TILESIZE;
+        const s1y = topToLeft.y / TILESIZE;
+        const s2x = botToRight.x / TILESIZE;
+        const s2y = botToRight.y / TILESIZE;
+
+        
+
+        if (otherPiecesGrid.has(`${s1x - 1},${s1y + 1}`)) return;
+        if (otherPiecesGrid.has(`${s2x + 1},${s2y - 1}`)) return;
+
+        occupiedGrids.delete(`${s1x},${s1y}`);
+        occupiedGrids.delete(`${s2x},${s2y}`); 
+
+        this.tiles[0] = new SquareTile((s1x - 1) * TILESIZE, (s1y + 1) * TILESIZE, topToLeft.color);
+        this.tiles[2] = new SquareTile((s2x + 1) * TILESIZE, (s2y - 1) * TILESIZE, botToRight.color);
+    } 
 }
 
 class TetrominoJ extends Tetromino {
     constructor(x, y, color) {
         super(); 
-
+        this.state = 0; 
         this.tiles.push(
             new SquareTile(x * TILESIZE, y * TILESIZE, color),
             new SquareTile(x * TILESIZE, (y + 1) * TILESIZE, color),
@@ -298,6 +384,92 @@ class TetrominoJ extends Tetromino {
         for (let i = 0; i < this.tiles.length; i++) {
             this.tiles[i].make();
           }
+    }
+
+    rotate(rot) {
+        let nextState = this.state + rot; 
+        let pivotTile = this.tiles[1]; 
+
+        occupiedGrids.delete(`${this.tiles[3].x / TILESIZE},${this.tiles[3].y / TILESIZE}`); 
+        if (nextState % 2 == 0) {
+            this.toVertical(); 
+
+            if (nextState % 4 == 0) {
+                this.tiles[3] = new SquareTile((pivotTile.x - TILESIZE), (pivotTile.y - TILESIZE), pivotTile.color); 
+            } else {
+                this.tiles[3] = new SquareTile((pivotTile.x + TILESIZE), (pivotTile.y + TILESIZE), pivotTile.color); 
+            }
+
+        } else {
+            this.toHorizontal();
+            
+            if (nextState % 4 == 1) {
+                this.tiles[3] = new SquareTile((pivotTile.x + TILESIZE), (pivotTile.y - TILESIZE), pivotTile.color); 
+            } else {
+                this.tiles[3] = new SquareTile((pivotTile.x - TILESIZE), (pivotTile.y + TILESIZE), pivotTile.color); 
+            }
+        }
+        this.state = nextState; 
+    }
+
+    toVertical() {
+        let leftToTop = this.tiles[0];
+        let rightToBot = this.tiles[2];
+
+        let thisPiecesGrid = new Set(); 
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+            thisPiecesGrid.add(`${oldTile.x / TILESIZE},${oldTile.y / TILESIZE}`);
+        }
+
+        let otherPiecesGrid = occupiedGrids.difference(thisPiecesGrid); 
+        
+        const s1x = leftToTop.x / TILESIZE;
+        const s1y = leftToTop.y / TILESIZE;
+        const s2x = rightToBot.x / TILESIZE;
+        const s2y = rightToBot.y / TILESIZE;
+
+        
+
+        if (otherPiecesGrid.has(`${s1x + 1},${s1y - 1}`)) return;
+        if (otherPiecesGrid.has(`${s2x - 1},${s2y + 1}`)) return;
+
+        occupiedGrids.delete(`${s1x},${s1y}`);
+        occupiedGrids.delete(`${s2x},${s2y}`); 
+
+        this.tiles[0] = new SquareTile((s1x + 1) * TILESIZE, (s1y - 1) * TILESIZE, leftToTop.color);
+        this.tiles[2] = new SquareTile((s2x - 1) * TILESIZE, (s2y + 1) * TILESIZE, rightToBot.color);
+    }
+
+    toHorizontal() {
+        let topToLeft = this.tiles[0];
+        let botToRight = this.tiles[2];
+
+        let thisPiecesGrid = new Set(); 
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let oldTile = this.tiles[i]; 
+            thisPiecesGrid.add(`${oldTile.x / TILESIZE},${oldTile.y / TILESIZE}`);
+        }
+
+        let otherPiecesGrid = occupiedGrids.difference(thisPiecesGrid); 
+        
+        const s1x = topToLeft.x / TILESIZE;
+        const s1y = topToLeft.y / TILESIZE;
+        const s2x = botToRight.x / TILESIZE;
+        const s2y = botToRight.y / TILESIZE;
+
+        
+
+        if (otherPiecesGrid.has(`${s1x - 1},${s1y + 1}`)) return;
+        if (otherPiecesGrid.has(`${s2x + 1},${s2y - 1}`)) return;
+
+        occupiedGrids.delete(`${s1x},${s1y}`);
+        occupiedGrids.delete(`${s2x},${s2y}`); 
+
+        this.tiles[0] = new SquareTile((s1x - 1) * TILESIZE, (s1y + 1) * TILESIZE, topToLeft.color);
+        this.tiles[2] = new SquareTile((s2x + 1) * TILESIZE, (s2y - 1) * TILESIZE, botToRight.color);
     }
 }
 
@@ -545,7 +717,7 @@ class TetrominoT extends Tetromino {
         this.tiles[1] = new SquareTile((s1x - 1) * TILESIZE, (s1y + 1) * TILESIZE, topToLeft.color);
         this.tiles[2] = new SquareTile((s2x + 1) * TILESIZE, (s2y - 1) * TILESIZE, botToRight.color);
     }
-    
+
 }
 
 

@@ -1,5 +1,10 @@
 export {};
 
+const canvas = /** @type {HTMLCanvasElement} */ (
+    document.getElementById("box1canvas")
+);
+const context = canvas.getContext("2d");
+
 const BLACK = "#000000";
 const GRAY = "#808080";
 const RED = "#FF0000";
@@ -11,19 +16,17 @@ const CYAN = "#00FFFF";
 const ORANGE = "#FF971C"; 
 const TILESIZE = 50;
 
+const COLS = canvas.width / TILESIZE;
+const ROWS = canvas.height / TILESIZE;
+
 const SHAPES = new Set(["O", "I", "J", "L", "S", "Z", "T"]); 
 
 let frameStep = 0; 
-let updateMod = 20; 
+let updateMod = 10; 
 let occupiedGrids = new Set(); 
 let gridMap = new Map(); 
 let allTetros = [];
-
-
-const canvas = /** @type {HTMLCanvasElement} */ (
-    document.getElementById("box1canvas")
-);
-const context = canvas.getContext("2d");
+let diassociatedTiles = []; 
 
 function adjustColor(hex, amount) {
     hex = hex.replace("#", "");
@@ -70,6 +73,18 @@ class SquareTile {
         gridMap.set(id, this)
 
     }
+
+    setInactive() {
+        let id = `${this.x / TILESIZE},${this.y / TILESIZE}`;
+        occupiedGrids.delete(id); 
+        gridMap.delete(id); 
+
+        this.x = -1000; 
+        this.y = -1000; 
+        this.color = BLACK;
+        this.size = 0;
+        this.band = 0; 
+    }
 }
 
 class Tetromino {
@@ -107,6 +122,7 @@ class Tetromino {
 
         if (!shouldStep) {
             this.isActive = false;
+            diassociatedTiles = diassociatedTiles.concat(this.tiles);
             return; 
         }
         
@@ -721,7 +737,6 @@ class TetrominoT extends Tetromino {
 }
 
 
-
 function makeFrame() {
     context.fillStyle = BLACK;
     context.fillRect(0, 0, canvas.width, canvas.height);
@@ -748,7 +763,7 @@ function makeFrame() {
 
 
 let shapesUsedInCycle = new Set(); 
-
+let activeTetro = null; 
 function addRandomTetronimo() {
     // console.log(shapesUsedInCycle); 
 
@@ -762,9 +777,6 @@ function addRandomTetronimo() {
     let dropY = -5; 
     let newTetro;
 
-    // need to add a bunch of bounds checks so that tetros dont get stuck on
-    // the boundary box
-    
     switch (pickedShape) {
         case "O": 
             newTetro = new TetrominoO(dropX, dropY, YELLOW); 
@@ -795,25 +807,77 @@ function addRandomTetronimo() {
             break;
     }
     allTetros.push(newTetro); 
+    activeTetro = newTetro; 
     shapesUsedInCycle.add(pickedShape);
 }
 
 function makeAndUpdateTetros() {
-    if (allTetros.length == 0) addRandomTetronimo(); 
+    if (activeTetro === null) addRandomTetronimo(); 
 
-    let tetroInPlay = false; 
+    activeTetro.step();
+    activeTetro.make();
+     
+    if (!activeTetro.isActive) activeTetro = null; 
 
-    for (let i = 0; i < allTetros.length; i++) {
-        allTetros[i].make(); 
-        allTetros[i].step();
-        
-        tetroInPlay = tetroInPlay || allTetros[i].isActive; 
+    for (let i = 0; i < diassociatedTiles.length; i++) 
+        diassociatedTiles[i].make(); 
+
+}
+
+function clearLines() {
+    let lineCounter = new Map();
+    let clearedRows = [];
+
+    for (let tile of diassociatedTiles) {
+        let row = tile.y / TILESIZE;
+        lineCounter.set(row, (lineCounter.get(row) || 0) + 1);
+
+        if (lineCounter.get(row) === COLS - 2) {
+            clearedRows.push(row);
+        }
     }
 
-    // add logic to delete lines
+    if (clearedRows.length === 0) return;
+    clearedRows.sort(); 
 
-    if (!tetroInPlay) addRandomTetronimo(); 
+    for (let tile of diassociatedTiles) {
+        let row = tile.y / TILESIZE;
+        if (clearedRows.includes(row)) {
+            tile.setInactive();
+        }
+    }
 
+    diassociatedTiles = diassociatedTiles.filter(t => t.size !== 0);
+
+    for (let tile of diassociatedTiles) {
+        let row = tile.y / TILESIZE;
+        let shift = clearedRows.filter(v => v > row).length;
+        occupiedGrids.delete(`${tile.x / TILESIZE},${tile.y / TILESIZE}`);
+
+        tile.y = tile.y + TILESIZE * shift; 
+        occupiedGrids.add(`${tile.x / TILESIZE},${tile.y / TILESIZE}`)
+    }
+
+    occupiedGrids.clear();
+    gridMap.clear();
+
+    for (let tile of diassociatedTiles) {
+        let gx = tile.x / TILESIZE;
+        let gy = tile.y / TILESIZE;
+        let id = `${gx},${gy}`;
+        occupiedGrids.add(id);
+        gridMap.set(id, tile);
+    }
+}
+
+function animate() {
+    frameStep += 1; 
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    makeFrame(); 
+
+    makeAndUpdateTetros(); 
+    clearLines(); 
+    requestAnimationFrame(animate);
 }
 
 window.addEventListener("keydown", e => {
@@ -860,27 +924,27 @@ window.addEventListener("keydown", e => {
     }
 });
 
-function animate() {
-    frameStep += 1; 
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    makeFrame(); 
-    // testTile.make();
-    // testTile.step();
-    
-    // testTile2.make();
-    // testTile2.step();
+window.addEventListener("keydown", e => {
+    if (e.key === "D") {
+        for (const tetro of allTetros) {
+            if (tetro.isActive) {
+                tetro.rotate(1);
+                break;
+            }
+        }
+    }
+});
 
-    // new TetrominoI(5, 1, RED).make(); 
-    // new TetrominoJ(6, 4, BLUE).make();
-    // // new TetrominoL(1, 5, CYAN).make(); 
-    // new TetrominoZ(3, 8, YELLOW).make(); 
-    // new TetrominoS(7, 8, GREEN).make(); 
-    // new TetrominoT(5, 11, ORANGE).make(); 
+window.addEventListener("keydown", e => {
+    if (e.key === "A") {
+        for (const tetro of allTetros) {
+            if (tetro.isActive) {
+                tetro.rotate(-1);
+                break;
+            }
+        }
+    }
+});
 
-    makeAndUpdateTetros(); 
-    
-
-    requestAnimationFrame(animate);
-}
 
 animate();

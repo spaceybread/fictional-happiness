@@ -16,13 +16,26 @@ const CYAN = "#00FFFF";
 const ORANGE = "#FF971C"; 
 const TILESIZE = 50;
 
+let gameOver = false;
+
+const SHAPE_COLORS = {
+    O: YELLOW,
+    I: CYAN,
+    J: BLUE,
+    L: ORANGE,
+    S: GREEN,
+    Z: RED,
+    T: PURPLE
+};
+
+
 const COLS = canvas.width / TILESIZE;
 const ROWS = canvas.height / TILESIZE;
 
 const SHAPES = new Set(["O", "I", "J", "L", "S", "Z", "T"]);  
 
 let frameStep = 0; 
-let updateMod = 10; 
+let updateMod = 32; 
 let occupiedGrids = new Set(); 
 let gridMap = new Map(); 
 let allTetros = [];
@@ -41,6 +54,21 @@ function adjustColor(hex, amount) {
 
     return `rgb(${r}, ${g}, ${b})`;
 }
+
+let score = 0;
+let linesCleared = 0;
+let level = 1;
+
+const scoreEl = document.getElementById("score");
+const linesEl = document.getElementById("lines");
+const levelEl = document.getElementById("level");
+
+function updateUI() {
+    scoreEl.textContent = score;
+    linesEl.textContent = linesCleared;
+    levelEl.textContent = level;
+}
+
 
 class SquareTile {
     constructor(x, y, color) {
@@ -790,7 +818,10 @@ let activeTetro = null;
 function addRandomTetronimo() {
     // console.log(shapesUsedInCycle); 
 
-    if (shapesUsedInCycle.size == SHAPES.size) shapesUsedInCycle = new Set(); 
+    if (shapesUsedInCycle.size == SHAPES.size) {
+        shapesUsedInCycle = new Set(); 
+        renderBag();
+    }
     let possibleShapes = Array.from(SHAPES.difference(shapesUsedInCycle)); 
     let rIdx = Math.floor(Math.random() * possibleShapes.length); 
     let pickedShape = possibleShapes[rIdx]; 
@@ -832,6 +863,7 @@ function addRandomTetronimo() {
     allTetros.push(newTetro); 
     activeTetro = newTetro; 
     shapesUsedInCycle.add(pickedShape);
+    renderBag();
 }
 
 function makeAndUpdateTetros() {
@@ -861,6 +893,7 @@ function clearLines() {
     }
 
     if (clearedRows.length === 0) return;
+    
     clearedRows.sort(); 
 
     for (let tile of diassociatedTiles) {
@@ -891,15 +924,82 @@ function clearLines() {
         occupiedGrids.add(id);
         gridMap.set(id, tile);
     }
+
+    for (let tile of diassociatedTiles) {
+        if (tile.y < TILESIZE * 2) {
+            gameOver = true;
+            drawGameOver(); 
+            break;
+        }
+    }   
+
+    const pointsTable = [0, 100, 300, 500, 800];
+    score += pointsTable[clearedRows.length] * level;
+    linesCleared += clearedRows.length;
+
+    level = Math.floor(linesCleared / 10) + 1;
+    updateMod = Math.max(2, 32 - level);
+
+    scoreEl.classList.add("flash");
+    setTimeout(() => scoreEl.classList.remove("flash"), 150);
+
+    updateUI();
+    
+}
+
+const bagEl = document.getElementById("bag");
+
+function renderBag() {
+    bagEl.innerHTML = "";
+
+    for (const shape of SHAPES) {
+        const div = document.createElement("div");
+        div.classList.add("bag-item");
+
+        const used = shapesUsedInCycle.has(shape);
+        div.classList.add(used ? "used" : "available");
+
+        div.textContent = shape;
+        div.style.color = used ? "#444" : SHAPE_COLORS[shape];
+        div.style.textShadow = used ? "none" : `0 0 6px ${SHAPE_COLORS[shape]}`;
+
+        bagEl.appendChild(div);
+    }
+}
+
+function drawGameOver() {
+    if (!gameOver) return;
+
+    context.fillStyle = "rgba(0, 0, 0, 0.75)";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.textAlign = "center";
+
+    context.font = "48px 'Press Start 2P'";
+    context.fillStyle = "red";
+    context.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 40);
+
+    context.font = "18px 'Press Start 2P'";
+    context.fillStyle = "white";
+    context.fillText(`SCORE ${score}`, canvas.width / 2, canvas.height / 2 + 20);
+
+    context.textAlign = "left";
 }
 
 function animate() {
-    frameStep += 1; 
+    frameStep += 1;
     context.clearRect(0, 0, canvas.width, canvas.height);
-    makeFrame(); 
 
-    makeAndUpdateTetros(); 
-    clearLines(); 
+    makeFrame();
+    if (gameOver) {
+        console.log('we got here'); 
+        drawGameOver();
+    } else {        
+        makeAndUpdateTetros();
+        clearLines();
+    }
+
+    
     requestAnimationFrame(animate);
 }
 
@@ -969,5 +1069,30 @@ window.addEventListener("keydown", e => {
     }
 });
 
+window.addEventListener("keydown", e => {
+    // lol didnt think to use .lowercase earlier
+    if (e.key.toLowerCase() === "r" && gameOver) {
+        restartGame();
+    }
+});
 
+function restartGame() {
+    gameOver = false;
+    score = 0;
+    linesCleared = 0;
+    level = 1;
+    updateMod = 10;
+
+    occupiedGrids.clear();
+    gridMap.clear();
+    allTetros = [];
+    diassociatedTiles = [];
+    shapesUsedInCycle = new Set();
+    activeTetro = null;
+
+    updateUI();
+    renderBag();
+}
+
+renderBag();
 animate();
